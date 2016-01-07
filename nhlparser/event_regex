@@ -1,0 +1,82 @@
+REGEX Expressions
+
+types of shots
+	- Wrist
+	- Slap
+	- Backhand
+
+types of shot target misses
+	- Goalpost
+	- Over Net
+	- Wide of Net
+
+
+
+PSTR 
+	Period Start- Local time: 7:08 EST
+GEND
+	Game End- Local time: 9:34 EST
+STOP
+	TV TIMEOUT
+	PUCK IN BENCHES
+	PUCK FROZEN
+	OFFSIDE
+	ICING
+FAC
+	CHI won Neu. Zone - PIT #87 CROSBY vs CHI #19 TOEWS
+	CHI won Off. Zone - PIT #16 FEHR vs CHI #70 RASMUSSEN
+	PIT won Def. Zone - PIT #13 BONINO vs CHI #70 RASMUSSEN
+
+	<team> won <Neu/Off./Def.> Zone - <team> #<number> <winner> vs <team> #<number> <loser>
+
+	\w{3} won \w{3}. Zone - \w{3} #\d{1,2} (.*?) vs \w{3} #\d{1,2} (.*)
+
+MISS
+	CHI #72 PANARIN, Wrist, Goalpost, Off. Zone, 18 ft.
+	CHI #15 ANISIMOV, Wrist, Over Net, Off. Zone, 20 ft.
+	CHI #2 KEITH, Slap, Wide of Net, Off. Zone, 53 ft.
+	CHI #15 ANISIMOV, Backhand, Wide of Net, Off. Zone, 15 ft.
+	CHI #88 KANE, Wrist, Wide of Net, Off. Zone, 11 ft.
+
+	<team> #<number> <shooter> <shot type> <target> <Neu/Off./Def.> Zone, <shot distance>
+
+	\w{3} #\d{1,2} (.*?), (.*?), (.*?), \w{3}. Zone, \d{1,3} ft.
+
+
+HIT
+	PIT #14 KUNITZ HIT CHI #4 HJALMARSSON, Off. Zone
+	CHI #2 KEITH HIT PIT #57 PERRON, Def. Zone
+
+	<team> #<number> <hitter> HIT <team> #<number> <target player>, <Neu/Off./Def.> Zone
+
+	\w{3} #\d{1,2} (.*?) HIT \w{3} #\d{1,2} (.*?), (.*?). Zone
+
+SHOT
+	PIT ONGOAL - #72 HORNQVIST, Wrist, Off. Zone, 29 ft.
+
+	\w{3} ONGOAL - #\d{1,2} (.*?), (.*?), (.*?). Zone, \d{1,3} ft./
+
+PENL
+	CHI #2 KEITH Holding(2 min), Def. Zone Drawn By: PIT #87 CROSBY
+	CHI #19 TOEWS Roughing(2 min), Off. Zone Drawn By: PIT #58 LETANG
+BLOCK
+	PIT #57 PERRON BLOCKED BY CHI #32 ROZSIVAL, Backhand, Def. Zone
+	PIT #87 CROSBY BLOCKED BY CHI #57 VAN RIEMSDYK, Wrist, Def. Zone
+	CHI #88 KANE BLOCKED BY PIT #3 MAATTA, Wrist, Def. Zone
+
+	\w{3} #\d{1,2} (.*?) BLOCKED BY \w{3} #\d{1,2} (.*?), (.*?). Zone/
+
+GIVE
+	PIT GIVEAWAY - #57 PERRON, Def. Zone
+	PIT GIVEAWAY - #16 FEHR, Def. Zone
+	CHI GIVEAWAY - #7 SEABROOK, Def. Zone
+
+	\w{3} GIVEAWAY - #\d{1,2} (.*?), (.*?). Zone/
+
+GOAL
+	PIT #71 MALKIN(19), Slap, Off. Zone, 58 ft.
+	Assists: #81 KESSEL(11); #58 LETANG(21)
+
+	\w{3} #\d{1,2} (.*?)\(\d{1,3}\), (.*?). Zone, \d{1,3} ft./
+	Assists: #\d{1,2} (.*?)\(\d{1,3}\);/		
+	check for #\d{1,2} (.*?)\(\d{1,3}\) for the 1st and 2nd assists
