@@ -7,7 +7,6 @@ import datetime
 
 # Parser for PLAY BY PLAY pages
 
-
 class Event:
     '''Attributes: 
         - playID
@@ -31,7 +30,7 @@ class Event:
         self.awayTeamStatus = None
         self.timeInPeriod = None
         self.eventType = None
-        self.desc = None
+        self.desc = ""
 
         self.homeTeam = []
         self.awayTeam = []
@@ -108,14 +107,13 @@ class DataAccess:
         #Delete the parser object so object is not seriazlied
         self.parser = None
         del self.parser
+        return self.__dict__
 
-        self.jsonOutput = json.dumps(self.__dict__)
-        return self.jsonOutput
 
     def Prettify(self):
-        del self.jsonOutput
-        self.jsonOutput = json.dumps(self.__dict__, sort_keys=True, indent=4, separators=(',', ': '))
-        return self.jsonOutput
+
+        jsonOutput = json.dumps(self.__dict__, sort_keys=True, indent=4, separators=(',', ': '))
+        return jsonOutput
 
 
 
@@ -150,6 +148,17 @@ class Parser:
         # self.attendance stores the attendance info as Attendance 19,745 at Air Canada Centre
         self.attendanceNode = self.gameInfoNode.find("td")
         self.attendance = self.attendanceNode.string
+
+        #shortforms for teams
+        sfMatch = re.compile("(\w+) On Ice")
+
+        self.shortformsNode = self.body.find("td" , {"width" : "10%", "class" : "heading + bborder", "align" : "center"})
+        sfMatches = sfMatch.match(self.shortformsNode.string)
+        self.awaySF = sfMatches.group(1)
+        
+        self.shortformsNode = self.shortformsNode.findNextSibling("td" , {"width" : "10%", "class" : "heading + bborder", "align" : "center"})
+        sfMatches = sfMatch.match(self.shortformsNode.string)
+        self.homeSF = sfMatches.group(1)
 
         return True
 
@@ -197,6 +206,9 @@ class Parser:
     def EventSummaryParse(self):
         '''Go through the play by play'''
 
+        #init regex for players
+        self.InitRegex()
+
         self.periodTable = self.body
         #Table Tag for beginning of period: 
         #<table align="center" border="0" cellpadding="0" cellspacing="0" class= "tablewidth">
@@ -213,10 +225,35 @@ class Parser:
 
             #move to the next table (new period)
             self.periodTable = self.periodTable.findNextSibling("table", {"align" : "center", "border" : "0", "cellpadding" : "0", "cellspacing" : "0", "class" : "tablewidth"})
- 
+            
+    def ProcessDesc(self, string):
+        if string is not None:
+            if (string[0: len(self.homeSF)-1] == self.homeSF):
+                return self.homeSF
+            elif (string[0:len(self.awaySF)-1] == self.awaySF):
+                return self.awaySF
+            else:
+                return None
+        else:
+            return None
+        
+
+    def InitRegex(self):
+        #'title' node is given as "Center - MATT DUCHENE"
+        #regex match with "(Center|Left Wing|Right Wing|Defense|Goalie) - (.*)\s(.*)"
+        #match with the first and last names
+        self.playerRegex = re.compile("(Center|Left Wing|Right Wing|Defense|Goalie) - (.*)\s(.*)")
+
+    def ProcessPlayer(self, string):  
+        '''Outputs the first and last names, excludes position string (ie center, right wing)'''
+        matches = self.playerRegex.match(string)
+        if (matches):  #found position, first, last names
+
+            return str(matches.group(2)) + " " + str(matches.group(3))
 
     def ParseRow(self):
         #Parse play ID
+        #print self.eventRow
         currentEvent = len(self.eventSeries) - 1
         self.eventRowNode = self.eventRow.find("td")
         self.eventSeries[currentEvent].playId = self.eventRowNode.string
@@ -228,7 +265,7 @@ class Parser:
         #Strength
         self.eventRowNode = self.eventRowNode.nextSibling.nextSibling
         self.eventSeries[currentEvent].homeTeamStatus = self.eventRowNode.string
-  
+        self.eventSeries[currentEvent].awayTeamStatus = self.eventRowNode.string
                 
         #Time        
         self.eventRowNode = self.eventRowNode.nextSibling.nextSibling      
@@ -248,11 +285,25 @@ class Parser:
         self.eventRowNode = self.eventRowNode.nextSibling.nextSibling
         self.eventSeries[currentEvent].desc = self.eventRowNode.string
 
+        #get the team statusses correct
+        if (self.ProcessDesc(self.eventRowNode.string) == self.homeSF):
+            if (self.eventSeries[currentEvent].homeTeamStatus == "PP"):
+                self.eventSeries[currentEvent].awayTeamStatus = "SH"
+            elif (self.eventSeries[currentEvent].homeTeamStatus == "SH"):
+                self.eventSeries[currentEvent].awayTeamStatus = "PP"
+        else:
+            if (self.eventSeries[currentEvent].awayTeamStatus == "PP"):
+                self.eventSeries[currentEvent].homeTeamStatus = "SH"
+            elif (self.eventSeries[currentEvent].awayTeamStatus == "SH"):
+                self.eventSeries[currentEvent].homeTeamStatus = "PP"
+            
         #Away Team
         playerTable = self.eventRow.find("table", attrs={'border':'0', 'cellpadding' : '0', 'cellspacing' : '0'})
         players = playerTable.findAll("font")
         for player in players:
-            self.eventSeries[currentEvent].homeTeam.append(player['title'])
+            playerName = self.ProcessPlayer(player['title'])
+            self.eventSeries[currentEvent].homeTeam.append(playerName)
+
             
         #Home Team
         playerTable = self.eventRow.find_all("td", attrs={'class' : ' + bborder'})      
@@ -268,7 +319,8 @@ class Parser:
 
         players = playerTable.find_all("font")
         for player in players:
-            self.eventSeries[currentEvent].awayTeam.append(player['title'])
+            playerName = self.ProcessPlayer(player['title'])
+            self.eventSeries[currentEvent].awayTeam.append(playerName)
             
 
     

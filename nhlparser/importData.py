@@ -1,31 +1,56 @@
 from pymongo import MongoClient
-import json
+import json, bson
 import parser_pbp
 import parser_event_summary
 import sys
+
+
+'''
+when starting mongodb 
+https://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/#run-mongodb-community-edition
+go to C:\mongodb\bin
+
+in cmd run mongod.exe --dbpath "d:\...."
+
+'''
 
 client = MongoClient()
 db = client.db
 coll = db.test
 
-# result = db.test.insert_one(
-# 	{
+#result = db.test.delete_many({})
+cursor = db.test.find()
+for document in cursor:
+	print (document)
 
-# 		"player" : "Jason Spezza",
-# 		"number" : 19
-# 	})
-
-
+sys.exit()
 
 #test = parser_pbp.DataAccess('http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM')
 #test.Output()
 
-test = parser_event_summary.DataAccess('http://www.nhl.com/scores/htmlreports/20142015/ES020014.HTM')
-test.Output()
+yearString = "20142015"
+gameId = 0014
+while (True):
+	gameIdStr = format(gameId, '04')
 
-with open('test.txt', 'w') as txtfile:
-	txtfile.write(test.Prettify())
+	urlString = 'http://www.nhl.com/scores/htmlreports/' + yearString + '/PL02' + gameIdStr + '.HTM'
+	urlString = "http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM"
+	test = parser_pbp.DataAccess(urlString)
+	result = test.Output()
+	print result
+	print type(json.dumps(test.__dict__))
 
+
+
+	if (True):
+		 with open('test_pbp.txt', 'w') as txtfile:
+		 	txtfile.write(json.dumps(test.Prettify()))
+
+			result = db.test.insert_one(result)
+			gameId = gameId + 1	
+			break
+	else:
+		break
 
 sys.exit()
 

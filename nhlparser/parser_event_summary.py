@@ -110,12 +110,15 @@ class DataAccess:
 
 	def Output(self):
 		'''Make Output to '''
+		if (self.parser.errorStatus):
+			return False
+
 		self.home_team = self.parser.homeTeam
 		self.away_team = self.parser.visitingTeam
 		self.date = self.parser.date
 		self.homePlayers = []
+		self.awayPlayers = []
 		for player in self.parser.homePlayers:
-			print player.name
 			self.homePlayers.append({
 				'jersey' : player.jersey,
 				'position' : player.position,
@@ -140,25 +143,65 @@ class DataAccess:
 				'fWins' : player.fWins,
 				'fLoss' : player.fLoss
 				})
+
+		for player in self.parser.visitingPlayers:
+			self.awayPlayers.append({
+				'jersey' : player.jersey,
+				'position' : player.position,
+				'name' : player.name,
+				'goals' : player.goals,
+				'assists' : player.assists,
+				'plusMinus' : player.plusMinus,
+				'penalties' : player.penalties,
+				'pim' : player.pim,
+				'tot' : player.tot,
+				'shifts' : player.shifts,
+				'ppTime' : player.ppTime,
+				'shTime' : player.shTime,
+				'evenTime' : player.evenTime,
+				'shotsOnGoal' : player.shotsOnGoal,
+				'shotsBlocked' : player.shotsBlocked,
+				'shotsMissed' : player.shotsMissed,
+				'hits' : player.hits,
+				'giveaways' : player.giveaways,
+				'takeaways' : player.takeaways,
+				'blocks' : player.blocks,
+				'fWins' : player.fWins,
+				'fLoss' : player.fLoss
+				})
+
 		self.parser = None
 		del self.parser
-		self.jsonOutput = json.dumps(self.__dict__)
-		return self.jsonOutput
+		#self.jsonOutput = json.dumps(self.__dict__)
+		#return self.jsonOutput
 
 	def Prettify(self):
+
 		del self.jsonOutput
 		self.jsonOutput = json.dumps(self.__dict__, sort_keys=True, indent=4, separators=(',', ': '))
 		return self.jsonOutput
 
 
+
+
 class Parser:
+	'''Parses Game Info, visiting Team and Home Team players and their stats'''
 	def __init__(self, url):
-		self.url = url
-		self.page = urllib2.urlopen(self.url)
-		self.soup = BeautifulSoup(self.page.read(), "html.parser")
-		self.body = self.soup.find("table")
+		try:
+			self.page = urllib2.urlopen(url)
+			self.soup = BeautifulSoup(self.page.read(), "html.parser")
+			self.body = self.soup.find("table")
+			self.errorStatus = False
+		except urllib2.HTTPError:
+			self.errorStatus = True
+
 
 	def GameInfoParse(self):
+		'''Grab game info, such as date and attendance'''
+		
+		if (self.errorStatus):
+			return False
+
 		# Find the node with GameInfo
 		self.gameInfo = self.body.find("table", {"id" : "GameInfo"})
 		self.gameInfoNode = self.gameInfo.find("tr")
@@ -182,6 +225,11 @@ class Parser:
 		return True
 
 	def VisitingTeamParse(self):
+		'''Go through player stats on the visiting team'''
+
+		if (self.errorStatus):
+			return False
+
 		# Start at the node for the visiting team
 		self.visitingTeamNode = self.body.find("td", {"class" : "lborder + rborder + bborder + visitorsectionheading"})
 		self.visitingTeam = self.visitingTeamNode.string 	#returns the name of the visiting team
@@ -212,6 +260,11 @@ class Parser:
 		return True
 
 	def HomeTeamParse(self):
+		'''Go through player stats on the home team'''
+
+		if (self.errorStatus):
+			return False
+
 		# Start at the node for the home team
 		self.homeTeamNode = self.body.find("td", {"class" : "lborder + rborder + bborder + homesectionheading"})
 		self.homeTeam = self.homeTeamNode.string 	#returns the name of the hometeam
@@ -287,20 +340,21 @@ class Parser:
 
 
 def main():
-	newParse = Parser('http://www.nhl.com/scores/htmlreports/20142015/ES020014.HTM')
+	newParse = Parser('http://www.nhl.com/scores/htmlreports/20142015/ES201014.HTM')
 
-	newParse.HomeTeamParse()
-	newParse.VisitingTeamParse()
-	for player in newParse.homePlayers:
+	if not (newParse.errorStatus):
+		newParse.HomeTeamParse()
+		newParse.VisitingTeamParse()
+		for player in newParse.homePlayers:
 
 
-		print unicode(player.name) + unicode(" G : " + str(player.goals))
-		print (player.tot)
-		print (player.plusMinus)
-		print (player.shotsOnGoal)
+			print unicode(player.name) + unicode(" G : " + str(player.goals))
+			print (player.tot)
+			print (player.plusMinus)
+			print (player.shotsOnGoal)
 
-	newParse.GameInfoParse()
-	print len(newParse.homePlayers)
+		newParse.GameInfoParse()
+		print len(newParse.homePlayers)
 	
 
 if __name__ == "__main__":
