@@ -19,36 +19,34 @@ db = client.db
 coll = db.test
 
 #result = db.test.delete_many({})
-cursor = db.test.find()
-for document in cursor:
-	print (document)
+# cursor = db.test.find()
+# for document in cursor:
+# 	print (document)
 
-sys.exit()
+#sys.exit()
 
 #test = parser_pbp.DataAccess('http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM')
 #test.Output()
 
 yearString = "20142015"
-gameId = 0014
+gameId = 0004
 while (True):
 	gameIdStr = format(gameId, '04')
 
-	urlString = 'http://www.nhl.com/scores/htmlreports/' + yearString + '/PL02' + gameIdStr + '.HTM'
-	urlString = "http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM"
-	test = parser_pbp.DataAccess(urlString)
+	#urlString = "http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM"
+	test = parser_pbp.DataAccess(yearString, gameIdStr)
 	result = test.Output()
-	print result
-	print type(json.dumps(test.__dict__))
-
-
+	print yearString + gameIdStr
+	#print urlString
 
 	if (True):
 		 with open('test_pbp.txt', 'w') as txtfile:
-		 	txtfile.write(json.dumps(test.Prettify()))
+		 	#txtfile.write(json.dumps(test.Prettify()))
+		 	txtfile.write(json.dumps(result))
 
 			result = db.test.insert_one(result)
 			gameId = gameId + 1	
-			break
+
 	else:
 		break
 

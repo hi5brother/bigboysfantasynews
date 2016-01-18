@@ -5,6 +5,8 @@ import re
 import json
 import datetime
 
+_DEBUG_ = False
+
 # Parser for PLAY BY PLAY pages
 
 class Event:
@@ -75,8 +77,12 @@ class GoalEvent(Event):
     
 class DataAccess:
     '''Composition of Parser object with events, used for serializing into JSON for MongoDB'''
-    def __init__(self, url):
-        self.parser = Parser(url)
+    def __init__(self, yearString, gameIdStr):
+
+        urlString = 'http://www.nhl.com/scores/htmlreports/' + yearString + '/PL02' + gameIdStr + '.HTM'
+        self.game_id = yearString + gameIdStr
+
+        self.parser = Parser(urlString)
         self.parser.GameInfoParse()
         self.parser.VisitingTeamInfoParse()
         self.parser.HomeTeamInfoParse()
@@ -84,7 +90,7 @@ class DataAccess:
 
     def Output(self):
         '''Make output to '''
-        self.game_id = 0
+        #self.game_id = 0
         self.home_team = self.parser.homeTeam
         self.away_team = self.parser.visitingTeam
 
@@ -107,6 +113,7 @@ class DataAccess:
         #Delete the parser object so object is not seriazlied
         self.parser = None
         del self.parser
+
         return self.__dict__
 
 
@@ -150,9 +157,10 @@ class Parser:
         self.attendance = self.attendanceNode.string
 
         #shortforms for teams
-        sfMatch = re.compile("(\w+) On Ice")
+        sfMatch = re.compile("([\w\.]+) On Ice") #match on periods (for S.J) and characters 
 
         self.shortformsNode = self.body.find("td" , {"width" : "10%", "class" : "heading + bborder", "align" : "center"})
+        print self.shortformsNode
         sfMatches = sfMatch.match(self.shortformsNode.string)
         self.awaySF = sfMatches.group(1)
         
@@ -253,7 +261,9 @@ class Parser:
 
     def ParseRow(self):
         #Parse play ID
-        #print self.eventRow
+        if (_DEBUG_):
+            print self.eventRow
+
         currentEvent = len(self.eventSeries) - 1
         self.eventRowNode = self.eventRow.find("td")
         self.eventSeries[currentEvent].playId = self.eventRowNode.string
@@ -299,10 +309,11 @@ class Parser:
             
         #Away Team
         playerTable = self.eventRow.find("table", attrs={'border':'0', 'cellpadding' : '0', 'cellspacing' : '0'})
-        players = playerTable.findAll("font")
-        for player in players:
-            playerName = self.ProcessPlayer(player['title'])
-            self.eventSeries[currentEvent].homeTeam.append(playerName)
+        if (playerTable is not None):
+            players = playerTable.findAll("font")
+            for player in players:
+                playerName = self.ProcessPlayer(player['title'])
+                self.eventSeries[currentEvent].homeTeam.append(playerName)
 
             
         #Home Team
@@ -316,11 +327,11 @@ class Parser:
 
         #grab the LAST td class + bborder to get this table of players
         playerTable = playerTable[-1]
-
-        players = playerTable.find_all("font")
-        for player in players:
-            playerName = self.ProcessPlayer(player['title'])
-            self.eventSeries[currentEvent].awayTeam.append(playerName)
+        if (playerTable is not None):
+            players = playerTable.find_all("font")
+            for player in players:
+                playerName = self.ProcessPlayer(player['title'])
+                self.eventSeries[currentEvent].awayTeam.append(playerName)
             
 
     

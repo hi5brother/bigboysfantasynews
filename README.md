@@ -21,10 +21,12 @@ Version 0.2
 Version 0.2
 <ul>
 	<li>Parses Event Summary pages from NHL.com</li>
+	<li>Parses Play by Play pages from NHL.com</li>
+	<li>Inserts parsed data into document-based database</li>
 </ul>
 Version 0.1
 <ul>
-	<li>Can query standard requests about league information (e.g.standings, scoreboard, players)</li>
+	<li>Can query standard requests about fantasy league information (e.g.standings, scoreboard, players)</li>
 	<li>Only outputs data in xml in command prompt</li>
 
 </ul>
@@ -43,6 +45,6 @@ Version 0.1
 </ul>
 <h2>Potential Future Plans and Applications</h2>
 <ul>
-	<li>Put the backend into a LAMP stack</li>
+	<li>Put the backend into a LAMP stack or Django framework</li>
 	<li>Add RSS feed about the teams</li>
 </ul>
