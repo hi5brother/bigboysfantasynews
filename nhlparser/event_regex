@@ -62,8 +62,8 @@ PENL
 
 BLOCK
 	PIT #57 PERRON BLOCKED BY CHI #32 ROZSIVAL, Backhand, Def. Zone
-	PIT #87 CROSBY BLOCKED BY CHI #57 VAN RIEMSDYK, Wrist, Def. Zone
-	CHI #88 KANE BLOCKED BY PIT #3 MAATTA, Wrist, Def. Zone
+	PIT #87 CROSBY BLOCKED BY CHI #57 VAN RIEMSDYK, Wrist, Def. Zon
+es	CHI #88 KANE BLOCKED BY PIT #3 MAATTA, Wrist, Def. Zone
 
 	([\w\.]{3}) #\d{1,2} (.*?) BLOCKED BY ([\w\.]{3}) #\d{1,2} (.*?), (.*?). Zone
 

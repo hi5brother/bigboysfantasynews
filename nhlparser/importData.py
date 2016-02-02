@@ -12,6 +12,11 @@ go to C:\mongodb\bin
 
 in cmd run mongod.exe --dbpath "d:\...."
 
+to use shell
+go to C:\mongodb\bin in another cmd window
+in cmd run mongo.exe
+> db.test.find()
+
 '''
 
 client = MongoClient()
@@ -66,7 +71,7 @@ player document
 	"name" : ,
 	"dob" : ,
 	"status" : ,
-	"current_team" :
+	"stats" :
 		{
 			"team_id" : ,
 			"gp" : ,
