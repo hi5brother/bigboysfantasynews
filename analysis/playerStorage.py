@@ -1,6 +1,6 @@
 import sys
 from pymongo import MongoClient
-import readDataTest
+import dbQuery
 
 client = MongoClient()
 db = client.db
@@ -12,7 +12,7 @@ class PlayerStats:
 		'''Player class that stores cumulative stats'''
 		self.name = name
 		self.status = 1
-
+		self.current = 1
 		self.stats = ({'team' : "",
 							'gp' : 1,
 							'goals' : 0,
@@ -24,6 +24,7 @@ class PlayerStats:
 		'''Output as a dictionary to insert into database'''
 		playerDict = {'name' : self.name,
 						'status' : self.status,
+						'current' : self.current,
 						'stats' : self.stats}
 		return playerDict
 
@@ -33,38 +34,50 @@ class PlayerStats:
 			for document in cursor:
 				self.status = document['status']
 				self.stats = document['stats']
+				self.current = document['current']
 
 			return 1
 		else:
 			return 0
 
+	def UpdateDB(self):
+		result = db.playerStorage.update_one(
+			{'name' : self.name},
+			{'$set' : {'status' : self.status,
+					'stats' : self.stats
+					'current' : self.current}
+			})
+		return result
+
 
 
 #Add in all players from the raw data into processed player storage 
-playerCur = readDataTest.GetAllPlayers()
+playerCur = dbQuery.GetAllPlayers()
 
 for player in playerCur:
 
 	print player['_id']
+
 	#Query the player
 	cursor = coll.find({'name' : player['_id']})
-
 	currentPlayer = PlayerStats(player['_id'])
 	
 	#If player is already in database
 	if cursor.count() != 0:
 		#read the player data
 		currentPlayer.LoadFromDB(cursor)	
+		gameList = dbQuery.GetPlayerGameList(currentPlayer.name)
 
-		#make changes to player HERE
-		currentPlayer.stats['gp']  = 2
+		for gameID in gameList:
+			if currentPlayer.current < gameID:
+				#make changes to player HERE
+				
+				currentPlayer.stats['gp']  = currentPlayer.stats['gp'] + 1
 
-		#then reinsert/update
-		result = db.playerStorage.update_one(
-			{'name' : player['_id']},
-			{'$set' : {'status' : currentPlayer.status,
-						'stats' : currentPlayer.stats}
-			})
+				currentPlayer.current = gameID
+				
+				#then reinsert/update
+				currentPlayer.UpdateDB
 
 
 	#If player is not in the database

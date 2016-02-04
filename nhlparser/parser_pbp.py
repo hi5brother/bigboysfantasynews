@@ -127,15 +127,23 @@ class DataAccess:
 class Parser:
     '''Parses Game Info, Visiting Team, Home Team, and Play by Play'''
     def __init__(self, url):
-        self.url = url
-        self.page = urllib2.urlopen(self.url)
-        self.soup = BeautifulSoup(self.page.read(), "html.parser")
-        self.body = self.soup.find("table")
+        try:
+            self.url = url
+            self.page = urllib2.urlopen(self.url)
+            self.soup = BeautifulSoup(self.page.read(), "html.parser")
+            self.body = self.soup.find("table")
+            self.errorStatus = False
+        except urllib2.HTTPError:
+            self.errorStatus = True
 
         self.eventSeries = []
 
     def GameInfoParse(self):
         '''Grab info such as date, attendance'''
+
+        if (self.errorStatus):
+            return False
+
         # Find the node with GameInfo
         self.gameInfo = self.body.find("table", {"id" : "GameInfo"})
         self.gameInfoNode = self.gameInfo.find("tr")
@@ -173,6 +181,10 @@ class Parser:
     def VisitingTeamInfoParse(self):
         '''Grabs the visiting team info
         - Team Name'''
+        
+        if (self.errorStatus):
+            return False
+
         # Start at the node for the visiting team
         #< table id="Visitor" border="0" cellpadding="0" cellspacing="0" align="center">
             # <tbody><tr>
@@ -203,6 +215,10 @@ class Parser:
     def HomeTeamInfoParse(self):
         '''Grabs the home team info
         - Team Name'''
+
+        if (self.errorStatus):
+            return False
+        
         # See above for visiting team
         self.homeTeamNode = self.body.find("table", {"id": "Home"})
         self.homeTeamNode = self.homeTeamNode.find("td", {"style" : "font-size: 10px;font-weight:bold"})
@@ -214,6 +230,9 @@ class Parser:
     def EventSummaryParse(self):
         '''Go through the play by play'''
 
+        if (self.errorStatus):
+            return False
+        
         #init regex for players
         self.InitRegex()
 

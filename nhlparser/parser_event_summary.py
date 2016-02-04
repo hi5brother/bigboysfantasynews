@@ -101,8 +101,11 @@ class Player:
 
 class DataAccess:
 	'''Composition of Parser object for event summary, used to serialize JSON output to MongoDB'''
-	def __init__(self, url):
-		self.parser = Parser(url)
+	def __init__(self, yearString, gameIdStr):
+		
+		urlString = 'http://www.nhl.com/scores/htmlreports/' + yearString + '/ES02' + gameIdStr + '.HTM'
+		self.game_id = yearString + gameIdStr
+		self.parser = Parser(urlString)
 
 		self.parser.HomeTeamParse()
 		self.parser.VisitingTeamParse()
@@ -172,6 +175,8 @@ class DataAccess:
 
 		self.parser = None
 		del self.parser
+
+		return self.__dict__
 		#self.jsonOutput = json.dumps(self.__dict__)
 		#return self.jsonOutput
 

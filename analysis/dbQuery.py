@@ -57,15 +57,18 @@ def GetAllPlayers():
 
 	return cursor
 
-def UpdateAllPlayers():
-	'''Get all players in the NEW unprocessed files'''
-	pass
+def GetPlayerGameList(player):
+	'''Find the latest game that the player was involved in'''
+	cursor = db.test.aggregate([
+		{"$match" : {}},
+		{"$unwind" : "$pbp"},
+		{"$match" : {"$or" : [{"pbp.homeTeam" : str(player)}, {"pbp.awayTeam" : str(player)}]}},
+		{"$group":{"_id" : "$game_id",
+					"count" : {"$sum" : 1}}}
 
+		])
+	return cursor
 
-def PBPTeamQuery():
-	'''Returns events for a team'''
-
-	pass
 
 def PBPPlayerQuery(player):
 	'''Returns events when a player was on the ice'''
@@ -75,6 +78,7 @@ def PBPPlayerQuery(player):
 		{"$unwind" : "$pbp"},
 		{"$match" : {"$or" : [{"pbp.homeTeam" : str(player)}, {"pbp.awayTeam" : str(player)}]}},
 		{"$project" : {
+						"game_id" : "$game_id",
 						"playId" : "$pbp.playId",
 						"period" : "$pbp.period",
 						"timeInPeriod" : "$pbp.timeInPeriod",
@@ -91,7 +95,8 @@ def PBPPlayerQuery(player):
 # for thing in test:
 # 	print thing["desc"]
 # sys.exit()
-def PBPGameQuery(game,period, eventType):
+
+def PBPGameQuery(game, period, eventType):
 	'''Returns list of plays in a period with a certain event for a particular game'''
 	#http://stackoverflow.com/questions/3985214/retrieve-only-the-queried-element-in-an-object-array-in-mongodb-collection
 	#First match will filter by game
@@ -102,6 +107,7 @@ def PBPGameQuery(game,period, eventType):
 		{"$match" : {"pbp.eventType" : str(eventType),
 					"pbp.period" : str(period) }},
 		{"$project" : {
+						"game_id" : "$game_id",
 						"playId" : "$pbp.playId",
 						"period" : "$pbp.period",
 						"timeInPeriod" : "$pbp.timeInPeriod",
@@ -114,18 +120,38 @@ def PBPGameQuery(game,period, eventType):
 		
 	return cursor	
 
-#test = PBPGameQuery("201420150001",1, "GOAL")
-#test = PBPPlayerQuery("NAZEM KADRI")
+def ESGamePlayerQuery(game, player):
+	#cursor = db.eventSummary.find({"game_id" : "201420150078"})
+	#PLAYER NAME IS lke KUCHEROV, NIKITA IN THE DATABASE
+	cursor = db.eventSummary.aggregate([
+		{"$match" : {"game_id" : str(game)}},
+		{"$project" : {"players" : {"$setUnion" : ["$homePlayers" , "$awayPlayers"]}}},
+		{"$unwind" : "$players"},
+		{"$match" : {"players.name" : str(player)}},
+		{"$project" : {
+					"jersey" : "$players.name"
+		}}
+	])
 
-# for thing in test:
-# 	for key in thing.keys():
-# 		print thing[key]
-
-# test = db.test.find()
-
-# sys.exit()
+	return cursor
 
 
+def main():
+	test = PBPGameQuery("201420150005",1, "GOAL")
+	test = PBPPlayerQuery("PATRICK MARLEAU")
+	test = GetPlayerGameList("PATRICK MARLEAU")
+	test = ESGamePlayerQuery("201420150078", "KUCHEROV, NIKITA")
+	for thing in test:
+		for key in thing.keys():
+			print "--" +  key
+			print thing[key]
+			print type(thing[key])
+
+
+	sys.exit()
+
+if __name__ == "__main__":
+    main()
 # cursor = db.test.aggregate([
 # 	{"$match" : {"pbp.period" : "2"}},
 # 	{"$unwind" : "$pbp"},

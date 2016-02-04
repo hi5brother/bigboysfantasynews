@@ -33,27 +33,50 @@ coll = db.test
 #test = parser_pbp.DataAccess('http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM')
 #test.Output()
 
-yearString = "20142015"
-gameId = 0004
-while (True):
-	gameIdStr = format(gameId, '04')
-
-	#urlString = "http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM"
-	test = parser_pbp.DataAccess(yearString, gameIdStr)
-	result = test.Output()
-	print yearString + gameIdStr
-	#print urlString
-
-	if (True):
-		 with open('test_pbp.txt', 'w') as txtfile:
-		 	#txtfile.write(json.dumps(test.Prettify()))
-		 	txtfile.write(json.dumps(result))
-
-			result = db.test.insert_one(result)
-			gameId = gameId + 1	
-
+def CheckGameExists(gameId, collection):
+	'''Check if the game is already loaded in a particular collection'''
+	cursor = collection.find( {"game_id" : gameId})
+	for document in cursor:
+		print document
+	if cursor.count() > 0:
+		return 1
 	else:
-		break
+		return 0
+
+yearString = "20142015"
+gameId = 78
+while (True):
+	gameIdStr = format(gameId, '04')	#format with leading zeros
+	
+	print CheckGameExists(yearString +gameIdStr, db.eventSummary)
+	print yearString + gameIdStr
+	sys.exit()
+
+	#urlString = "http://www.nhl.com/scores/htmlreports/20142015/PL020014.HTM"	
+	#Parse for the PBP file and insert into db
+	if CheckGameExists(yearString + gameIdStr, db.test) == 0:
+		pbp_parse = parser_pbp.DataAccess(yearString, gameIdStr)
+		pbp_result = pbp_parse.Output()	
+
+		if (pbp_result):
+			pbp_result = db.test.insert_one(pbp_result)
+
+		print "PBP Parsed"
+
+	#Parse for the event summary file and insert into db
+	if CheckGameExists(yearString + gameIdStr, db.eventSummary) == 0:
+		es_parse = parser_event_summary.DataAccess(yearString, gameIdStr)
+		es_result = es_parse.Output()
+
+
+		if (es_result):
+			es_result = db.eventSummary.insert_one(es_result)
+
+		print "ES Parsed"
+	gameId = gameId + 1
+	print yearString + gameIdStr
+	sys.exit()
+
 
 sys.exit()
 
@@ -69,8 +92,9 @@ team document
 player document
 {
 	"name" : ,
-	"dob" : ,
-	"status" : ,
+	"dob" : ,		
+	"status" : ,	healthy, injured, etc
+	"current" : ,	is player data updated? put most recent gameID
 	"stats" :
 		{
 			"team_id" : ,
